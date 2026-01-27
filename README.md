@@ -200,13 +200,12 @@ Once the backend is running, visit:
 
 #### Authentication
 - `POST /users/register` - Register new user
-- `POST /users/login` - User login
+- `POST /users/token` - User login (returns JWT token)
 - `GET /users/me` - Get current user profile
 
 #### Analysis
-- `POST /analysis/upload` - Upload image for OCR processing
-- `GET /analysis/scans` - Get user's scan history
-- `GET /analysis/scan/{scan_id}` - Get specific scan details
+- `POST /analysis/analyze` - Upload image for OCR processing
+- `GET /analysis/history` - Get user's scan history
 
 ## 🔧 Development
 
