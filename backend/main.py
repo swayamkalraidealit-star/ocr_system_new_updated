@@ -23,3 +23,4 @@ app.include_router(scans.router, prefix="/analysis", tags=["analysis"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to OCR System Backend"}
+    

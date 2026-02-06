@@ -133,10 +133,10 @@ export function OCRExtractor() {
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="max-h-64 rounded-lg shadow-lg"
+                  className="max-h-[500px] rounded-lg shadow-lg"
                 />
               ) : (
-                <div className="w-64 h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center gap-4 border-2 border-gray-200 dark:border-gray-600 shadow-lg p-4">
+                <div className="w-full h-[500px] bg-gray-100 dark:bg-gray-700 rounded-lg flex flex-col items-center justify-center gap-4 border-2 border-gray-200 dark:border-gray-600 shadow-lg p-4">
                   <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-red-600 dark:text-red-400">
                     <FileImage className="w-10 h-10" />
                   </div>

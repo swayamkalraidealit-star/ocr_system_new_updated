@@ -35,7 +35,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setLoading(true);
 
     setLoading(true);
-    
+
     // Pass username explicitly
     const { error } = await signUp(email, password, fullName, username);
 
@@ -56,7 +56,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             Create Account
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Join OCR Extractor today
+            Join EngiDraw Data today
           </p>
         </div>
 

@@ -20,10 +20,10 @@ export function AuthPage() {
             <Scan className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            OCR Extractor
+            EngiDraw Data
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Extract text from drawings with AI precision
+            Engineering Data Calculation with Precision
           </p>
         </div>
 
