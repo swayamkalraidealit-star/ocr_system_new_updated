@@ -1,10 +1,11 @@
 # OCR System
 
-A full-stack OCR (Optical Character Recognition) system for extracting manufacturing details from images using Google's Gemini AI. The system features a React + TypeScript frontend and a FastAPI backend with MongoDB integration.
+A full-stack manufacturing analysis system. This system uses Google's Gemini AI via **n8n workflows** to extract and calculate Bill of Materials (BOM) data directly from engineering drawings. It features a React + TypeScript frontend and a FastAPI backend for user management and history.
 
 ## 📋 Table of Contents
 
 - [Features](#features)
+- [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
@@ -12,16 +13,24 @@ A full-stack OCR (Optical Character Recognition) system for extracting manufactu
 - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
 - [API Documentation](#api-documentation)
-- [Development](#development)
 
 ## ✨ Features
 
-- **Image Upload & OCR Processing**: Upload images for automated text extraction and analysis
-- **Gemini AI Integration**: Utilizes Google's Gemini 1.5 Pro model for intelligent data extraction
-- **User Authentication**: Secure user registration and login with JWT tokens
-- **Manufacturing Analysis**: Specialized extraction of manufacturing details and specifications
-- **Database Storage**: MongoDB integration for persistent data storage
-- **Modern UI**: Built with React, TypeScript, and Tailwind CSS
+- **Direct n8n Integration**: Frontend communicates directly with n8n webhooks for advanced manufacturing analysis.
+- **BOM Analysis**: Specialized extraction of dimensions, weights, and technical specifications from drawings.
+- **Gemini AI & n8n**: Leverages the power of Gemini 1.5 via n8n workflows for precise data extraction.
+- **Structured Data Visualization**: Extracted data is presented in organized grids and detailed calculation sections.
+- **User Authentication**: Secure user registration and login with JWT tokens.
+- **Modern UI**: High-performance interface built with React, TypeScript, and Tailwind CSS.
+
+## 🏗 Architecture
+
+The system has evolved from a local Python-based analysis to a more flexible serverless workflow:
+
+1. **Frontend**: The React application handles file uploads and converts drawings to base64.
+2. **Analysis (n8n)**: The frontend sends the base64 data and API key directly to an n8n webhook.
+3. **Internal Logic**: n8n processes the image using Gemini AI, performs engineering calculations, and returns structured JSON.
+4. **Backend (FastAPI)**: Manages user authentication and persistent storage in MongoDB.
 
 ## 🛠 Tech Stack
 
@@ -32,10 +41,13 @@ A full-stack OCR (Optical Character Recognition) system for extracting manufactu
 - **Tailwind CSS** - Utility-first styling
 - **Lucide React** - Icon library
 
+### Analysis & Orchestration
+- **n8n** - Workflow automation platform
+- **Google GenAI** - Gemini API integration (via n8n)
+
 ### Backend
 - **FastAPI** - Modern Python web framework
 - **MongoDB** - NoSQL database (via Motor)
-- **Google GenAI** - Gemini API integration
 - **JWT** - Authentication tokens
 - **Uvicorn** - ASGI server
 
@@ -46,8 +58,7 @@ ocr_system_new/
 ├── backend/
 │   ├── routers/
 │   │   ├── users.py          # User authentication endpoints
-│   │   └── scans.py          # OCR/analysis endpoints
-│   ├── core/                 # Core configuration
+│   │   └── scans.py          # History and legacy scan endpoints
 │   ├── auth.py              # Authentication utilities
 │   ├── database.py          # Database connection
 │   ├── models.py            # Database models
@@ -55,16 +66,15 @@ ocr_system_new/
 │   ├── main.py              # FastAPI application
 │   └── requirements.txt     # Python dependencies
 ├── frontend/
-│   ├── src/                 # React source files
-│   ├── index.html           # HTML entry point
-│   ├── package.json         # Node dependencies
-│   ├── tsconfig.json        # TypeScript config
-│   ├── tailwind.config.js   # Tailwind config
-│   └── vite.config.ts       # Vite config
-├── test_backend.py          # Backend tests
-├── verify_integration.py    # Integration tests
-├── .env                     # Environment variables
-└── .gitignore              # Git ignore rules
+│   ├── src/
+│   │   ├── components/      # UI Components (OCRExtractor, etc.)
+│   │   ├── lib/
+│   │   │   ├── n8n.ts       # n8n Webhook integration logic
+│   │   │   └── api.ts       # Backend API communication
+│   ├── .env                 # Frontend environment variables
+│   └── ...
+├── .env                     # Global common variables
+└── ...
 ```
 
 ## 📦 Prerequisites
@@ -72,41 +82,24 @@ ocr_system_new/
 - **Python 3.8+**
 - **Node.js 16+** and npm
 - **MongoDB** (local or cloud instance)
-- **Google Cloud Account** with Gemini API access
+- **n8n Workflow** configured with the `bom-analyze` webhook.
 
 ## 🚀 Installation
 
 ### 1. Clone the repository
-
 ```bash
 cd ocr_system_new
 ```
 
 ### 2. Backend Setup
-
-Create and activate a virtual environment:
-
 ```bash
 python -m venv venv
-
-# On Linux/Mac
-source venv/bin/activate
-
-# On Windows
-venv\Scripts\activate
-```
-
-Install Python dependencies:
-
-```bash
+source venv/bin/activate # Linux/Mac
 cd backend
 pip install -r requirements.txt
 ```
 
 ### 3. Frontend Setup
-
-Install Node dependencies:
-
 ```bash
 cd frontend
 npm install
@@ -114,154 +107,41 @@ npm install
 
 ## ⚙️ Configuration
 
-### Environment Variables
+### Frontend Environment (`frontend/.env`)
+```env
+VITE_API_URL=http://localhost:8000
+VITE_GOOGLE_API_KEY=your-gemini-api-key-here
+```
 
-Create a `.env` file in the root directory with the following variables:
-
+### Backend Environment (`.env`)
 ```env
 # MongoDB Configuration
-MONGODB_URL=mongodb://localhost:27017
-DB_NAME=ocr_system
+MONGO_URL=your-mongodb-connection-string
 
 # JWT Configuration
 SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# Google Gemini API
-GOOGLE_API_KEY=your-gemini-api-key-here
 ```
-
-Create a `.env` file in the `frontend/` directory:
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-### Getting API Keys
-
-1. **Google Gemini API Key**:
-   - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Create a new API key
-   - Copy the key to your `.env` file
-
-2. **Generate Secret Key** (for JWT):
-   ```bash
-   python -c "import secrets; print(secrets.token_urlsafe(32))"
-   ```
 
 ## 🏃 Running the Application
 
-### Start MongoDB
+1. **Start the Backend**:
+   ```bash
+   cd backend
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
 
-Ensure MongoDB is running on your system:
-
-```bash
-# On Linux
-sudo systemctl start mongodb
-
-# On Mac (if installed via Homebrew)
-brew services start mongodb-community
-
-# Or run directly
-mongod
-```
-
-### Start the Backend
-
-From the root directory:
-
-```bash
-cd backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The backend API will be available at `http://localhost:8000`
-
-### Start the Frontend
-
-In a new terminal:
-
-```bash
-cd frontend
-npm run dev
-```
-
-The frontend will be available at `http://localhost:5173`
+2. **Start the Frontend**:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
 
 ## 📚 API Documentation
 
 Once the backend is running, visit:
-
 - **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
-
-### Main Endpoints
-
-#### Authentication
-- `POST /users/register` - Register new user
-- `POST /users/token` - User login (returns JWT token)
-- `GET /users/me` - Get current user profile
-
-#### Analysis
-- `POST /analysis/analyze` - Upload image for OCR processing
-- `GET /analysis/history` - Get user's scan history
-
-## 🔧 Development
-
-### Running Tests
-
-```bash
-# Backend tests
-python test_backend.py
-
-# Integration tests
-python verify_integration.py
-```
-
-### Frontend Development
-
-```bash
-cd frontend
-
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
-
-# Build for production
-npm run build
-```
-
-### Backend Development
-
-The backend uses Python's FastAPI with auto-reload enabled during development. Any changes to `.py` files will automatically restart the server.
-
-## 🐛 Troubleshooting
-
-### MongoDB Connection Issues
-- Verify MongoDB is running: `sudo systemctl status mongodb`
-- Check the connection string in `.env`
-- Ensure database user has proper permissions
-
-### Gemini API Quota Errors
-- Check your API key is valid
-- Monitor usage at [Google Cloud Console](https://console.cloud.google.com)
-- Free tier has limited requests per minute
-
-### CORS Errors
-- Ensure backend CORS settings include your frontend URL
-- Check `main.py` `allow_origins` configuration
-
-## 📝 License
-
-This project is private and proprietary.
-
-## 👥 Contributing
-
-This is a private project. For questions or issues, contact the development team.
 
 ---
-
-**Last Updated**: January 2026
+**Last Updated**: February 2026
