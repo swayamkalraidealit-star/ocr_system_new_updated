@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, FileImage, X, Copy, Check, Loader2 } from 'lucide-react';
-import { api } from '../lib/api';
+import { analyzeBOM } from '../lib/n8n';
 
 export function OCRExtractor() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -45,40 +45,36 @@ export function OCRExtractor() {
     e.preventDefault();
   };
 
-  const [result, setResult] = useState<{ weight: number; data: any } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bomResult, setBomResult] = useState<any>(null);
 
   const handleExtract = async () => {
     if (!selectedFile) return;
 
     setIsProcessing(true);
     setError(null);
-    setResult(null);
+    setBomResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      const data = await analyzeBOM(selectedFile);
+      setBomResult(data);
       
-      const data = await api.postForm('/analysis/analyze', formData);
-      
-      setResult({
-        weight: data.calculated_weight_kg,
-        data: data.extracted_data
-      });
-      
-      setExtractedText(JSON.stringify(data.extracted_data, null, 2));
+      if (data.extracted_data) {
+        setExtractedText(JSON.stringify(data.extracted_data, null, 2));
+      } else {
+        setExtractedText(JSON.stringify(data, null, 2));
+      }
     } catch (err: any) {
-      console.error('Extraction failed:', err);
-      setError(err.message || 'Failed to extract data. Please check your connection and API key.');
+      console.error('BOM Analysis failed:', err);
+      setError(err.message || 'Failed to analyze BOM through n8n.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleCopy = async () => {
-    if (result) {
-      const textToCopy = `Calculated Weight: ${result.weight} kg\n\nExtracted Data:\n${JSON.stringify(result.data, null, 2)}`;
-      await navigator.clipboard.writeText(textToCopy);
+    if (bomResult) {
+      await navigator.clipboard.writeText(JSON.stringify(bomResult, null, 2));
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }
@@ -88,7 +84,7 @@ export function OCRExtractor() {
     setSelectedFile(null);
     setPreviewUrl(null);
     setExtractedText('');
-    setResult(null);
+    setBomResult(null);
     setError(null);
     setIsCopied(false);
     if (fileInputRef.current) {
@@ -186,21 +182,21 @@ export function OCRExtractor() {
         </div>
       )}
 
-      {result && (
+      {bomResult && (
         <div className="space-y-6">
-          <div className="bg-blue-600 rounded-2xl p-8 text-center text-white shadow-xl">
-            <p className="text-blue-100 text-sm font-medium uppercase tracking-wider mb-2">
+          <div className="bg-indigo-600 rounded-2xl p-8 text-center text-white shadow-xl">
+            <p className="text-indigo-100 text-sm font-medium uppercase tracking-wider mb-2">
               Estimated Weight
             </p>
             <h2 className="text-5xl font-bold mb-2">
-              {result.weight} <span className="text-2xl font-normal opacity-80">kg</span>
+              {bomResult.calculated_weight_kg || '0.000'} <span className="text-2xl font-normal opacity-80">kg</span>
             </h2>
-            <p className="text-blue-100/80 text-sm">
-              Based on 1.50mm effective thickness
+            <p className="text-indigo-100/80 text-sm">
+              Processed by n8n Intelligence
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Extracted Dimensions
@@ -223,18 +219,40 @@ export function OCRExtractor() {
               </button>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              {Object.entries(result.data).map(([key, value]) => (
-                <div key={key} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">
-                    {key.replace('_', ' ')}
-                  </p>
-                  <p className="text-gray-900 dark:text-white font-mono">
-                    {value === null ? 'N/A' : String(value)}
-                  </p>
+            {bomResult.extracted_data && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {Object.entries(bomResult.extracted_data).map(([key, value]) => (
+                  <div key={key} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium mb-1">
+                      {key.replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-gray-900 dark:text-white font-mono font-semibold">
+                      {value === null || value === undefined ? 'N/A' : String(value)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {bomResult.calculation_details && (
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Calculation Details
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(bomResult.calculation_details).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500 dark:text-gray-400 capitalize">
+                        {key.replace(/_/g, ' ')}:
+                      </span>
+                      <span className="text-gray-700 dark:text-gray-200 font-medium">
+                        {typeof value === 'number' ? value.toLocaleString() : String(value)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
             <button
               onClick={handleClear}

@@ -9,60 +9,60 @@ from ..models import ScanHistoryModel
 from ..schemas import ScanHistoryResponse
 from typing import List
 
-from ..core import analysis
+# from ..core import analysis
 from ..auth import get_current_user
 
 router = APIRouter()
 
-@router.post("/analyze")
-async def analyze_drawing(
-    file: UploadFile = File(...),
-    api_key: Optional[str] = Form(None),
-    current_user: dict = Depends(get_current_user)
-):
-    if not analysis:
-        raise HTTPException(status_code=500, detail="Analysis module not available")
-
-    # Save uploaded file temporarily
-    temp_filename = f"temp_{file.filename}"
-    with open(temp_filename, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    try:
-        # Determine API Key: Form > Env
-        final_api_key = api_key or os.environ.get("GOOGLE_API_KEY")
-        if not final_api_key:
-             raise HTTPException(status_code=400, detail="API Key required (upload or env var)")
-
-        weight, extracted_data = analysis.process_drawing_pipeline(temp_filename, final_api_key)
-        
-        if weight is None:
-             raise HTTPException(status_code=500, detail="Analysis failed to extract data")
-
-        # Save to History
-        db = await get_database()
-        history_entry = ScanHistoryModel(
-            user_id=current_user["_id"],
-            filename=file.filename,
-            calculated_weight_kg=weight,
-            extracted_data=extracted_data,
-            timestamp=datetime.now(timezone.utc).isoformat()
-        )
-        await db.history.insert_one(history_entry.model_dump(by_alias=True))
-
-        return {
-            "filename": file.filename,
-            "calculated_weight_kg": weight,
-            "extracted_data": extracted_data,
-            "message": "Analysis successful"
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        # Cleanup
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
+# @router.post("/analyze")
+# async def analyze_drawing(
+#     file: UploadFile = File(...),
+#     api_key: Optional[str] = Form(None),
+#     current_user: dict = Depends(get_current_user)
+# ):
+#     if not analysis:
+#         raise HTTPException(status_code=500, detail="Analysis module not available")
+# 
+#     # Save uploaded file temporarily
+#     temp_filename = f"temp_{file.filename}"
+#     with open(temp_filename, "wb") as buffer:
+#         shutil.copyfileobj(file.file, buffer)
+#     
+#     try:
+#         # Determine API Key: Form > Env
+#         final_api_key = api_key or os.environ.get("GOOGLE_API_KEY")
+#         if not final_api_key:
+#              raise HTTPException(status_code=400, detail="API Key required (upload or env var)")
+# 
+#         weight, extracted_data = analysis.process_drawing_pipeline(temp_filename, final_api_key)
+#         
+#         if weight is None:
+#              raise HTTPException(status_code=500, detail="Analysis failed to extract data")
+# 
+#         # Save to History
+#         db = await get_database()
+#         history_entry = ScanHistoryModel(
+#             user_id=current_user["_id"],
+#             filename=file.filename,
+#             calculated_weight_kg=weight,
+#             extracted_data=extracted_data,
+#             timestamp=datetime.now(timezone.utc).isoformat()
+#         )
+#         await db.history.insert_one(history_entry.model_dump(by_alias=True))
+# 
+#         return {
+#             "filename": file.filename,
+#             "calculated_weight_kg": weight,
+#             "extracted_data": extracted_data,
+#             "message": "Analysis successful"
+#         }
+# 
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+#     finally:
+#         # Cleanup
+#         if os.path.exists(temp_filename):
+#             os.remove(temp_filename)
 
 @router.get("/history", response_model=List[ScanHistoryResponse])
 async def get_history(current_user: dict = Depends(get_current_user)):
